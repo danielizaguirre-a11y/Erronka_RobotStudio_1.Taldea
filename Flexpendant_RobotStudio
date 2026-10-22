@@ -1,0 +1,128 @@
+MODULE MainModule
+	CONST jointtarget Home:=[[0,0,0,0,90,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+	PERS tooldata pintza_punta:=[TRUE,[[-7.86985,-0.102428,173],[1,0,0,0]],[0.5,[0,0,135],[1,0,0,0],0,0,0]];
+	CONST robtarget p10:=[[-1.51,70.52,301.41],[0.000647076,-0.0056978,0.999959,0.00695554],[-1,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+	TASK PERS wobjdata wobj1_panela:=[FALSE,TRUE,"",[[183.283,-182.598,120.756],[0.999921,-7.4902E-06,3.21898E-06,0.0125475]],[[0,0,0],[1,0,0,0]]];
+	PERS tooldata pintza_robot:=[TRUE,[[-7.86985,-0.102428,135],[1,0,0,0]],[0.5,[0,0,135],[1,0,0,0],0,0,0]];
+	TASK PERS wobjdata wobj1_zinta_plataforma:=[FALSE,TRUE,"",[[446.767,28.8904,102],[0.999986,-0.00517694,6.93539E-05,-0.000799722]],[[0,0,0],[1,0,0,0]]];
+	CONST robtarget punto_Z_G:=[[-78.41,30.09,145.79],[0.00432223,0.0074265,0.999906,0.0106932],[0,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+	CONST jointtarget Home10:=[[10.6536,8.0281,24.5431,0.627499,56.8245,11.2621],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+	VAR num pieza_zenbakia:=0;
+	CONST robtarget p20:=[[127.88,178.91,300.76],[0.00368918,0.0140964,-0.999893,-0.00145958],[-1,-1,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+	CONST robtarget P_gabe:=[[127,178,200],[0.00369772,0.0140686,-0.999893,-0.00146415],[-1,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+	CONST robtarget P_gabe_C1:=[[177,228,200],[0.00370605,0.0140766,-0.999893,-0.00146401],[-1,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+	CONST robtarget P_gabe_C2:=[[227,178.91,200],[0.00370605,0.0140766,-0.999893,-0.00146401],[-1,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+	CONST robtarget P_gabe_C3:=[[177,128,200.01],[0.00370714,0.0140595,-0.999893,-0.00146419],[-1,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+	CONST robtarget Z_kubo_erdia:=[[30.90,31.44,6.58],[0.00432701,0.00739215,0.999906,0.0106868],[0,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+	PROC main()
+
+	!Home= 0,0,0,0,90,0 robotan hasierako egoera
+	MoveAbsJ Home\NoEOffs, v300, fine, pintza_robot\WObj:=wobj1_panela;
+	WHILE PLC_Q4_6 = 1 DO
+		!Pintza hasierako egoera
+		Reset Zurrpagailua_piztu;
+		Set Zurrupagailua_itzali;
+		IF PLC_Q4_5 = 1 THEN
+			!Bikoitia balin bada ibilbide guztia egin
+			pieza3_giratorio;
+			Amaiera;
+			pieza1_beltza;
+			Amaiera;
+			pieza2_txuria;
+			Amaiera;
+			Set Robota_ok;
+			WaitTime 2;
+			Reset Robota_ok;
+		ENDIF
+		IF PLC_Q4_4 = 1 THEN
+			!Bakoitia balin bada ze pieza aukeratzeko aukera ematen dizu
+			TPReadFK pieza_zenbakia, "ze pieza nahi duzu?", "pieza1_beltza", "pieza2_txuria", "pieza3_giratorio", "Piezak_gabe", stEmpty;
+		ENDIF
+	IF pieza_zenbakia = 4 THEN
+		Piezak_gabe;
+		Set Robota_ok;
+			WaitTime 2;
+			Reset Robota_ok;
+            pieza_zenbakia := 0;
+	ENDIF
+	IF pieza_zenbakia = 3 THEN
+		!Bakoitia eta aukeratzen baduzu 3.piezaren ibilbidea egingo du
+		pieza3_giratorio;
+		WaitTime 1;
+		Amaiera;
+		Set Robota_ok;
+			WaitTime 2;
+			Reset Robota_ok;
+            pieza_zenbakia := 0;
+
+	ENDIF
+	IF pieza_zenbakia = 2 THEN
+		!Bakoitia eta aukeratzen baduzu 2.piezaren ibilbidea egingo du
+		pieza2_txuria;
+		WaitTime 1;
+		Amaiera;
+		Set Robota_ok;
+			WaitTime 2;
+			Reset Robota_ok;
+            pieza_zenbakia := 0;
+
+	ENDIF
+	IF pieza_zenbakia = 1 THEN
+		!Bakoitia eta aukeratzen baduzu 1.piezaren ibilbidea egingo du
+		pieza1_beltza;
+		WaitTime 1;
+		Amaiera;
+		Set Robota_ok;
+			WaitTime 2;
+			Reset Robota_ok;
+            pieza_zenbakia := 0;
+	ENDIF
+	ENDWHILE
+ENDPROC
+	PROC pieza2_txuria()
+		!2.piezaren agindu guztiak
+		MoveL p10, v300, fine, pintza_robot\WObj:=wobj1_panela;
+		MoveL Offs(pieza2,0,0,100), v300, fine, pintza_robot\WObj:=wobj1_panela;
+		WaitTime 1;
+		MoveL pieza2, v300, fine, pintza_robot\WObj:=wobj1_panela;
+		Reset Zurrupagailua_itzali;
+		Set Zurrpagailua_piztu;
+		WaitTime 1;
+		MoveL p10, v300, fine, pintza_robot\WObj:=wobj1_panela;
+	ENDPROC
+	PROC pieza3_giratorio()
+		!3.piezaren agindu guztiak
+		MoveL p10, v300, fine, pintza_robot\WObj:=wobj1_panela;
+		MoveL Offs(pieza3,0,0,100), v300, fine, pintza_robot\WObj:=wobj1_panela;
+		WaitTime 1;
+		MoveL pieza3, v300, fine, pintza_robot\WObj:=wobj1_panela;
+		Reset Zurrupagailua_itzali;
+		Set Zurrpagailua_piztu;
+		WaitTime 1;
+		MoveL p10, v300, fine, pintza_robot\WObj:=wobj1_panela;
+	ENDPROC
+	PROC pieza1_beltza()
+		!1.piezaren agindu guztiak
+		MoveL p10, v300, fine, pintza_robot\WObj:=wobj1_panela;
+		MoveL Offs(pieza1,0,0,100), v300, fine, pintza_robot\WObj:=wobj1_panela;
+		WaitTime 1;
+		MoveL pieza1, v300, fine, pintza_robot\WObj:=wobj1_panela;
+		Reset Zurrupagailua_itzali;
+		Set Zurrpagailua_piztu;
+		WaitTime 1;
+		MoveL p10, v300, fine, pintza_robot\WObj:=wobj1_panela;
+	ENDPROC
+	PROC Amaiera()
+	!pieza bukaerako plataforman eramango dituen aginduak
+	MoveJ punto_Z_G, v300, fine, pintza_robot\WObj:=wobj1_zinta_plataforma;
+	MoveJ Offs(Z_kubo_erdia,0,0,100), v300, fine, pintza_robot\WObj:=wobj1_zinta_plataforma;
+	MoveL Z_kubo_erdia, v300, fine, pintza_robot\WObj:=wobj1_zinta_plataforma;
+		Reset Zurrpagailua_piztu;
+		Set Zurrupagailua_itzali;
+	ENDPROC
+	PROC Piezak_gabe()
+		MoveL P_gabe, v300, fine, pintza_robot\WObj:=wobj1_panela;
+		MoveC P_gabe_C1, P_gabe_C2, v300, z10, pintza_robot\WObj:=wobj1_panela;
+		MoveC P_gabe_C3, P_gabe, v300, z10, pintza_robot\WObj:=wobj1_panela;
+	ENDPROC
+ENDMODULE
